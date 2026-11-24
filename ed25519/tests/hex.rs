@@ -1,4 +1,4 @@
-//! Hexadecimal display/serialization tests.
+//! Signature formatting and serialization tests.
 
 use core::str::FromStr;
 use ed25519::Signature;
@@ -58,4 +58,22 @@ fn from_str_rejects_mixed_case() {
         "E5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b",
     );
     assert!(result.is_err());
+}
+
+#[cfg(feature = "serde_bytes")]
+#[test]
+fn serde_bytes_json_round_trip() {
+    let sig = Signature::from_bytes(&TEST_1_SIGNATURE);
+    let json = serde_bytes::serialize(&sig, serde_json::value::Serializer).unwrap();
+    assert_eq!(json, serde_json::json!(TEST_1_SIGNATURE.as_slice()));
+    assert_eq!(serde_bytes::deserialize::<Signature, _>(json).unwrap(), sig);
+}
+
+#[cfg(feature = "serde_bytes")]
+#[test]
+fn serde_bytes_json_requires_exact_length() {
+    for len in [Signature::BYTE_SIZE - 1, Signature::BYTE_SIZE + 1] {
+        let json = serde_json::json!(vec![0u8; len]);
+        assert!(serde_bytes::deserialize::<Signature, _>(json).is_err());
+    }
 }

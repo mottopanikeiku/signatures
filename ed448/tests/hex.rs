@@ -1,4 +1,4 @@
-//! Hexadecimal display/serialization tests.
+//! Signature formatting and serialization tests.
 
 use core::str::FromStr;
 use ed448::Signature;
@@ -62,4 +62,22 @@ fn from_str_rejects_mixed_case() {
         "533A37f6bbe457251f023c0d88f976ae2dfb504a843e34d2074fd823d41a591f2b233f034f628281f2fd7a22ddd47d7828c59bd0a21bfd3980ff0d2028d4b18a9df63e006c5d1c2d345b925d8dc00b4104852db99ac5c7cdda8530a113a0f4dbb61149f05a7363268c71d95808ff2e652600",
     );
     assert!(result.is_err());
+}
+
+#[cfg(feature = "serde_bytes")]
+#[test]
+fn serde_bytes_json_round_trip() {
+    let sig = Signature::from_bytes(&TEST_1_SIGNATURE);
+    let json = serde_bytes::serialize(&sig, serde_json::value::Serializer).unwrap();
+    assert_eq!(json, serde_json::json!(TEST_1_SIGNATURE.as_slice()));
+    assert_eq!(serde_bytes::deserialize::<Signature, _>(json).unwrap(), sig);
+}
+
+#[cfg(feature = "serde_bytes")]
+#[test]
+fn serde_bytes_json_requires_exact_length() {
+    for len in [Signature::BYTE_SIZE - 1, Signature::BYTE_SIZE + 1] {
+        let json = serde_json::json!(vec![0u8; len]);
+        assert!(serde_bytes::deserialize::<Signature, _>(json).is_err());
+    }
 }

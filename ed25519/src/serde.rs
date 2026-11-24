@@ -44,11 +44,11 @@ impl<'de> serde_bytes::Deserialize<'de> for Signature {
     {
         struct ByteArrayVisitor;
 
-        impl de::Visitor<'_> for ByteArrayVisitor {
+        impl<'de> de::Visitor<'de> for ByteArrayVisitor {
             type Value = SignatureBytes;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                formatter.write_str("bytestring of length 114")
+                write!(formatter, "a byte array of length {}", Signature::BYTE_SIZE)
             }
 
             fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
@@ -60,6 +60,22 @@ impl<'de> serde_bytes::Deserialize<'de> for Signature {
                 bytes
                     .try_into()
                     .map_err(|_| Error::invalid_length(bytes.len(), &self))
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: de::SeqAccess<'de>,
+            {
+                let mut bytes = [0; Signature::BYTE_SIZE];
+                for (i, byte) in bytes.iter_mut().enumerate() {
+                    *byte = seq
+                        .next_element()?
+                        .ok_or_else(|| de::Error::invalid_length(i, &self))?;
+                }
+                if seq.next_element::<u8>()?.is_some() {
+                    return Err(de::Error::invalid_length(bytes.len() + 1, &self));
+                }
+                Ok(bytes)
             }
         }
 
