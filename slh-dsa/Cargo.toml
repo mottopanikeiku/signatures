@@ -54,6 +54,6 @@ name = "sign_verify"
 harness = false
 
 [features]
-alloc = []
-default = ["alloc", "pkcs8/alloc"]
+alloc = ["pkcs8/alloc"]
+default = ["alloc"]
 zeroize = ["dep:zeroize", "hybrid-array/zeroize"]

@@ -41,6 +41,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }} --no-default-features
+      - run: cargo check --target ${{ matrix.target }} --no-default-features --features alloc
 
   # because we're sharding tests, we'll compile them once first
   # upload that as artifact, and then re-download those artifacts
